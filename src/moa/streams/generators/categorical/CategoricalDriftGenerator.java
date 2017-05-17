@@ -2,6 +2,9 @@
  * Created by Lee Loong Kuan on 5/09/2015.
  * Interface that represents a basic Concept Drift Generator
  * Contains static methods to generate probabilities
+ * 
+ * Modified by Richard Hugh Moulton on 17/05/2017.
+ * Added the options "driftDurationNInstances" and "driftFunction."
  */
 
 package moa.streams.generators.categorical;
@@ -9,6 +12,7 @@ package moa.streams.generators.categorical;
 import com.github.javacliparser.FlagOption;
 import com.github.javacliparser.FloatOption;
 import com.github.javacliparser.IntOption;
+import com.github.javacliparser.MultiChoiceOption;
 import com.yahoo.labs.samoa.instances.Attribute;
 
 import moa.core.FastVector;
@@ -31,6 +35,8 @@ public abstract class CategoricalDriftGenerator extends AbstractOptionHandler im
 	    "Number of values per attribute", 2, 2, 5);
     public IntOption burnInNInstances = new IntOption("burnInNInstances", 'b',
 	    "Number of instances before the start of the drift", 10000, 0, Integer.MAX_VALUE);
+    public IntOption driftDurationNInstances = new IntOption("driftDurationNInstances", 'd',
+    		"Number of instances representing the duration of the concept drift. '0' represents abrupt drift.", 0, 0, Integer.MAX_VALUE);
     public FloatOption driftMagnitudePrior = new FloatOption("driftMagnitudePrior", 'i',
 	    "Magnitude of the drift between the starting probability and the one after the drift."
 		    + " Magnitude is expressed as the Hellinger distance [0,1]", 0.5, 1e-20, 0.9);
@@ -47,6 +53,11 @@ public abstract class CategoricalDriftGenerator extends AbstractOptionHandler im
 	    "States if the drift should apply to the conditional distribution p(y|x).");
     public FlagOption driftPriors = new FlagOption("driftPriors", 'p',
 	    "States if the drift should apply to the prior distribution p(x). ");
+    public MultiChoiceOption driftFunction = new MultiChoiceOption(
+            "driftFunction", 'f', "Function to determine transition between concepts.", new String[]{
+                "Linear", "Logistic"}, new String[]{
+                "lin",
+                "log"}, 0);
     public IntOption seed = new IntOption("seed", 'r', "Seed for random number generator", -1,
 	    Integer.MIN_VALUE, Integer.MAX_VALUE);
 
