@@ -17,12 +17,15 @@ import com.yahoo.labs.samoa.instances.Instances;
 import com.yahoo.labs.samoa.instances.InstancesHeader;
 
 /**
- * Generate categorial synthetic data with an abrupt drift of given magnitude. 
+ * Generate categorical synthetic data with a gradual concept drift of given magnitude. 
  * The model is a Bayesian Network with all the covariates as parents of the class. 
- * @author Francois Petitjean, Geoff Webb
+ * @author Richard Hugh Moulton
+ * 
+ * Extension of the AbruptDriftGenerator by Francois Petitjean, Geoff Webb
+ * AbruptDriftGenerator DOI: 10.1007/s10618-015-0448-4
  *
  */
-public class AbruptDriftGenerator extends CategoricalDriftGenerator{
+public class ExtendedDriftGenerator extends CategoricalDriftGenerator{
 
     private static final long serialVersionUID = 1291115908166720203L;
 
@@ -37,6 +40,15 @@ public class AbruptDriftGenerator extends CategoricalDriftGenerator{
      */
     double[][] pygxbd;
 
+    /**
+     * p(x) during drift
+     */
+    double[][] pxdd;
+    /**
+     * p(y|x) during drift
+     */
+    double[][] pygxdd;
+    
     /**
      * p(x) after drift
      */
@@ -77,7 +89,7 @@ public class AbruptDriftGenerator extends CategoricalDriftGenerator{
 
     @Override
     public String getPurposeString() {
-        return "Generates a stream with an abrupt drift of given magnitude.";
+        return "Generates a stream with an extended drift of given magnitude.";
     }
 
     @Override
@@ -97,11 +109,56 @@ public class AbruptDriftGenerator extends CategoricalDriftGenerator{
 
     @Override
     public InstanceExample nextInstance() {
-        double[][] px = (nInstancesGeneratedSoFar <= burnInNInstances
-                .getValue()) ? pxbd : pxad;
-        double[][] pygx = (nInstancesGeneratedSoFar <= burnInNInstances
-                .getValue()) ? pygxbd : pygxad;
-
+        double[][] px = new double [pxbd.length][pxbd[0].length];
+        double[][] pygx = new double [pygxbd.length][pygxbd[0].length];
+        
+        // Data stream is in the "burn in" phase
+    	if(nInstancesGeneratedSoFar <= burnInNInstances.getValue())
+        {
+        	px = pxbd;
+        	pygx = pygxbd;
+        }
+    	// Data stream is undergoing concept drift
+    	else if(nInstancesGeneratedSoFar <= (burnInNInstances.getValue() + driftDurationNInstances.getValue()))
+    	{
+    		// the proportion of pxad/pygx to use in determining "pxdd"/"pygxdd"
+    		double proportion = 0.0;
+    		// the number of instances through driftDuration
+    		double driftProgress = (double)(nInstancesGeneratedSoFar - burnInNInstances.getValue());
+    		    		
+    		// based on the function chosen to represent the shift between concepts, determine the value of proportion
+    		switch(driftFunction.getChosenIndex()){
+    			// Linear
+    			case 0: proportion = driftProgress/((double)driftDurationNInstances.getValue());
+    			break;
+    			// Logistic
+    			case 1: proportion = 1.0/(1.0+Math.exp(driftProgress-((double)(driftDurationNInstances.getValue())/2.0)));
+    			break;
+    		}
+    		
+    		for (int i = 0 ; i < pxbd.length ; i++)
+    		{
+    			for (int j = 0 ; j < pxbd[i].length ; j++)
+    			{
+    				px[i][j] = ((1.0-proportion)*pxbd[i][j]) + (proportion*pxad[i][j]);
+    			}
+    		}
+    		for (int i = 0 ; i < pygx.length ; i++)
+			{
+    			for (int j = 0 ; j < pygx[i].length ; j++)
+    			{
+    				pygx[i][j] = ((1.0-proportion)*pygxbd[i][j]) + (proportion*pygxad[i][j]);
+    			}
+    		}
+    		
+    	}
+    	// Data stream has stabilized in the new concept after drift
+    	else
+    	{
+    		px = pxad;
+        	pygx = pygxad;
+    	}
+    	
         Instance inst = new DenseInstance(streamHeader.numAttributes());
         inst.setDataset(streamHeader);
 
