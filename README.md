@@ -1,5 +1,5 @@
 This project is a complement to the Massive Online Analysis (MOA) library and aims to provide
-a categorical data generator which incorporates extended concept drift with given magnitude. 
+a categorical data generator which incorporates extended concept drift with given magnitude. It has been tested for compatability with MOA 16.04.
 
 This project is an extension the the ConceptDriftGenerator developed by:
 Webb, Geoffrey I. and Hyde, Roy and Cao, Hong and Nguyen, Hai Long and Petitjean, Francois
